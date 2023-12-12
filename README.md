@@ -35,7 +35,7 @@ sys.exit(app.exec())
 
 ## Result
 
-![image](./assets/result.png)
+![image](https://github.com/F1encko627/MiniDbHelper/assets/result.png)
 
 # Input
 
