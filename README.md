@@ -2,7 +2,7 @@
 
 > Python module for quick building minimalistic interface for database.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 # Install
 
@@ -15,7 +15,7 @@ pip3 install -r requirements.txt
 # Usage example
 
 ```Python
-from MiniDbHelper import MiniDbHelper, Layout
+from MiniDbHelper.MiniDbHelper import MiniDbHelper, Layout
 from PySide6.QtWidgets import QApplication
 import sys
 
@@ -23,10 +23,11 @@ app = QApplication(sys.argv)
 
 window = MiniDbHelper("Sells",
                       Layout(title="Primary",
-                             fields=["Sell-id", "Product-id", "Summ"],
+                             fields={"id" : "int", "summ": "int", "priority": "short"},
                              initial_data=["1", "2", "3", "4", "5", "6"]),
                       Layout(title="Notes",
-                             fields=["Name", "Checked"]))
+                             initial_data=["1", "2", "3", "0"],
+                             fields={"Name": "", "Checked": "bool"}))
 
 window.show()
 sys.exit(app.exec())
@@ -34,15 +35,28 @@ sys.exit(app.exec())
 
 ## Result
 
-> With additional styling applied (Darkeum By DevSec Studio)
+![image](./assets/result.png)
 
-![image](https://github.com/F1encko627/MiniDbHelper/assets/46199406/18d09420-b5b0-4bbe-ab2d-b05798972a8c)
+# Input
+
+```Python
+data = {"Field Name": "type", "Another Field": "type"} #Dictionary
+```
+
+Supported types:
+- "str" -> (QLineEdit)
+- "int" -> (QLineEdit)
+- "unsigned" -> (QSpinBox)
+- "bool" -> (QCheckBox)
+
++ not specified -> "str"
 
 # on_add() & on_delete() | TO-DO
+
 Optional methods to check/process data when user clicks add/delete button
 
 ```Python
-def on_add(**kwargs) -> dict:
+def on_add(*args) -> dict:
     ...
     return kwargs
 ```
@@ -54,7 +68,7 @@ Default: no action
 Optional method to control user input
 
 ```Python
-def validator() -> str:
+def validator(*args) -> str:
     if some_error:
        return "Error text" #To show to user
 
