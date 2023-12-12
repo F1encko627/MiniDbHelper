@@ -35,7 +35,7 @@ sys.exit(app.exec())
 
 ## Result
 
-![image](https://github.com/F1encko627/MiniDbHelper/assets/result.png)
+![result](https://github.com/F1encko627/MiniDbHelper/assets/46199406/04935f8e-af0a-42f5-b0d2-1df4d82a971c)
 
 # Input
 
