@@ -52,67 +52,6 @@ class MiniDbHelper(QMainWindow):
     
     def addData(self, l : Layout):
         
-        def __reset():
-            for inpt in inputs:
-                inpt.clear()
-        
-        def __valid():
-            for index, input in enumerate(inputs):
-                if not input.text().strip():
-                    QMessageBox.critical(self, 'Error', 'Please enter ' + l.fields[index])
-                    input.setFocus()
-                    return False
-                
-            return True
-        
-        def __add():
-            if not __valid():
-                return
-            
-            if not l.on_add([inpt.text() for inpt in inputs]):
-                QMessageBox.critical(self, 'Error', 'btn_add_action error')
-                return False
-            
-            row = grid.rowCount()
-            grid.insertRow(row)
-            
-            column = len(inputs)
-            
-            for input in inputs:
-                grid.setItem(row - 1, column, QTableWidgetItem(input.text()))
-                column += 1
-                
-            __reset()
-        
-        
-        def __del():
-            current_row = grid.currentRow()
-            
-            if not l.on_del([inpt.text() for inpt in inputs]):
-                QMessageBox.critical(self, 'Error', 'btn_del_action error')
-                return False
-            
-            if current_row < 0:
-                return QMessageBox.warning(self, 'Warning','Please select a record to delete')
-
-            button = QMessageBox.question(
-                self,
-                'Confirmation',
-                'Are you sure that you want to delete the selected row?',
-                QMessageBox.StandardButton.Yes |
-                QMessageBox.StandardButton.No
-            )
-            if button == QMessageBox.StandardButton.Yes:
-                grid.removeRow(current_row)
-        
-        
-        def __populateGrid():
-            grid.setRowCount((int)(len(l.initial_data) / len(l.fields)))
-            
-            for row in range(0, (int)(len(l.initial_data) / len(l.fields))):            
-                for column in range(0, len(l.fields)):
-                    grid.setItem(row, column, QTableWidgetItem(l.initial_data[row * len(l.fields) + column]))
-        
         '''=================================================
         Group Layout
         ================================================='''
@@ -140,7 +79,7 @@ class MiniDbHelper(QMainWindow):
         grid.setHorizontalHeaderLabels(l.fields)
         
         if (l.initial_data):
-            __populateGrid()
+            self.__populateGrid(grid, l.fields, l.initial_data)
         
         formLayout = QFormLayout()
         
@@ -164,19 +103,75 @@ class MiniDbHelper(QMainWindow):
         subLayout.addLayout(btnLayout)
         
         btnAdd = QPushButton(text=l.btn_add_name)
-        btnAdd.clicked.connect(__add)
+        btnAdd.clicked.connect(lambda state: self.__add(inputs, l.fields, grid, l.on_add))
         btnLayout.addWidget(btnAdd)
         btnDel = QPushButton(text=l.btn_del_name)
-        btnDel.clicked.connect(__del)
+        btnDel.clicked.connect(lambda state: self.__del(inputs, grid, l.on_del))
         btnLayout.addWidget(btnDel)
-    
+
+    def __reset(self, inputs):
+        for inpt in inputs:
+            inpt.clear()
+
+    def __valid(self, inputs, fields):
+        for index, input in enumerate(inputs):
+            if not input.text().strip():
+                QMessageBox.critical(self.window, 'Error', 'Please enter ' + fields[index])
+                input.setFocus()
+                return False
+            
+        return True
+
+    def __add(self, inputs, fields, grid, on_add):
+        if not self.__valid(inputs, fields):
+            return
+        
+        if not on_add([inpt.text() for inpt in inputs]):
+            QMessageBox.critical(self, 'Error', 'btn_add_action error')
+            return False
+        
+        row = grid.rowCount()
+        grid.insertRow(row)
+        
+        column = len(inputs)
+        
+        for input in inputs:
+            grid.setItem(row - 1, column, QTableWidgetItem(input.text()))
+            column += 1
+            
+        self.__reset(inputs)
+
+
+    def __del(self, inputs, grid, on_del):
+        current_row = grid.currentRow()
+        
+        if not on_del([inpt.text() for inpt in inputs]):
+            QMessageBox.critical(self, 'Error', 'btn_del_action error')
+            return False
+        
+        if current_row < 0:
+            return QMessageBox.warning(self, 'Warning','Please select a record to delete')
+        button = QMessageBox.question(
+            self,
+            'Confirmation',
+            'Are you sure that you want to delete row ' + str(current_row + 1) + '?',
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No
+        )
+        if button == QMessageBox.StandardButton.Yes:
+            grid.removeRow(current_row)
+
+
+    def __populateGrid(self, grid, fields, initial_data):
+        grid.setRowCount((int)(len(initial_data) / len(fields)))
+        
+        for row in range(0, (int)(len(initial_data) / len(fields))):            
+            for column in range(0, len(fields)):
+                grid.setItem(row, column, QTableWidgetItem(initial_data[row * len(fields) + column]))
              
                     
 if (__name__ == "__main__"):
     app = QApplication(sys.argv)
-    
-    with open("darkeum.qss","r") as file:
-        app.setStyleSheet(file.read())
     
     window = MiniDbHelper("Sells",
                           Layout(title="Primary",
@@ -186,7 +181,5 @@ if (__name__ == "__main__"):
                                  fields=["Name", "Checked"]))
     
     window.show()
-    
-    print(app.allWidgets())
     
     sys.exit(app.exec())
