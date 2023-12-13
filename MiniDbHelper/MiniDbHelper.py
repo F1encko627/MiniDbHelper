@@ -2,14 +2,15 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTableWidget, 
     QTableWidgetItem, QLabel, QFormLayout, 
     QLineEdit, QWidget, QPushButton, QHBoxLayout, 
-    QMessageBox, QVBoxLayout, QMessageBox, QGroupBox, QCheckBox, QSpinBox
+    QMessageBox, QVBoxLayout, QMessageBox,
+    QGroupBox, QCheckBox, QDoubleSpinBox
 )
 from PySide6.QtGui import QIcon
 import sys
 from collections.abc import Callable
 
 
-BoolFalseStr = ["0", "FALSE", "NONE", "N", "NO", "0", "NOPE", "NAN", "NINE", "НЕТ", "Н", "ЛОЖЬ"]
+BoolFalseStr = ["0", "FALSE", "NONE", "N", "NO", "NEGATIVE", "NOPE", "NAN", "NINE", "НЕТ", "Н", "ЛОЖЬ"]
 
 
 class Layout():
@@ -17,8 +18,9 @@ class Layout():
                  fields : dict,
                  btn_add_name : str = "Add",
                  btn_del_name : str = "Delete",
-                 on_add : Callable = lambda x: True,
-                 on_del : Callable = lambda y: True,
+                 on_add : Callable = lambda vals: vals,
+                 on_del : Callable = lambda vals: True,
+                 validator: Callable = None,
                  initial_data : list = None):
         self.title = title
         self.fields = fields
@@ -26,6 +28,7 @@ class Layout():
         self.btn_del_name = btn_del_name
         self.on_add = on_add
         self.on_del = on_del
+        self.validator = validator
         self.initial_data = initial_data
 
 
@@ -90,20 +93,11 @@ class MiniDbHelper(QMainWindow):
         
         inputs = list()
         
-        for title, type in zip(l.fields.keys(), l.fields.values()):
+        for title, _type in zip(l.fields.keys(), l.fields.values()):
             label = QLabel(title)
-            input = None
-            
-            if "bool" in type:
-                input = QCheckBox()
-            elif "unsigned" in type:
-                input = QSpinBox()
-            else:
-                input = QLineEdit()
-                
-            inputs.append(input)
-            
-            formLayout.addRow(label, input)
+            _input = self.__getInputFieldByType(_type, None, False)
+            inputs.append(_input)
+            formLayout.addRow(label, _input)
         
         '''=================================================
         Buttons
@@ -114,19 +108,51 @@ class MiniDbHelper(QMainWindow):
         subLayout.addLayout(btnLayout)
         
         btnAdd = QPushButton(text=l.btn_add_name)
-        btnAdd.clicked.connect(lambda state: self.__addDataFromInputsToGrid(inputs, l.fields, grid, l.on_add))
+        btnAdd.clicked.connect(lambda state: self.__addDataFromInputsToGrid(inputs, l.fields, grid, l.on_add, l.validator))
         btnLayout.addWidget(btnAdd)
         btnDel = QPushButton(text=l.btn_del_name)
         btnDel.clicked.connect(lambda state: self.__deleteRowFromGrid(inputs, grid, l.on_del))
         btnLayout.addWidget(btnDel)
 
 
-    def __clearInputs(self, inputs) -> None:
-        for inpt in inputs:
-            inpt.clear()
+    def __getInputFieldByType(self, _type: str, val, isDisabled: bool) -> QWidget:
+        _input = None
+        
+        if "bool" in _type:
+            _input = QCheckBox()
+            if val:
+                _input.setChecked(val)
+        elif "int" in _type:
+            _input = QDoubleSpinBox()
+            _input.setDecimals(0)
+            _input.setRange(-9223372036854775808, 9223372036854775807)
+            if val:
+                _input.setValue(val)
+        elif "unsigned" in _type:
+            _input = QDoubleSpinBox()
+            _input.setDecimals(0)
+            _input.setMaximum(9223372036854775807)
+            if val:
+                _input.setValue(val)
+        else:
+            _input = QLineEdit()
+            if val:
+                _input.setText(val)
+            
+        _input.setEnabled(not(isDisabled))
+        
+        return _input
+            
+
+    def __clearInputs(self, inputs, fields:dict) -> None:
+        for inpt, _type in zip(inputs, fields.values()):
+            if "bool" in _type:
+                inpt.setChecked(False)
+            else:
+                inpt.clear()
 
 
-    def __inputsNotEmpty(self, inputs, fields: dict) -> bool:
+    def __inputsNotEmpty(self, inputs: list, fields: dict) -> bool:
         for input, title, type in zip(inputs, fields.keys(), fields.values()):
             if type == "bool":
                 continue
@@ -139,29 +165,25 @@ class MiniDbHelper(QMainWindow):
         return True
 
 
-    def __addDataFromInputsToGrid(self, inputs, fields, grid, on_add) -> None:
-        if not self.__inputsNotEmpty(inputs, fields):
-            return False
+    def __addDataFromInputsToGrid(self, inputs: list, fields: dict, grid: QTableWidget, on_add: Callable, validator: Callable) -> None:
+        if not validator:
+            if not self.__inputsNotEmpty(inputs, fields):
+                return False
+        else:
+            err_str = validator(inputs, fields)
+            if err_str != "~OK":
+                QMessageBox.critical(self.window, 'Error', err_str)
         
-        if not on_add([inpt.text() for inpt in inputs]):
-            QMessageBox.critical(self, 'Error', 'btn_add_action error')
-            return False
-        
-        row = grid.rowCount()
-        grid.insertRow(row)
-        
-        for type, col in zip(fields.values(), range(len(fields))):
-            self.__addRowWithDataToGrid(type, col, row, grid, self.__getValsFromInput(inputs, fields))
-            
-        self.__clearInputs(inputs)
+        row = grid.rowCount()        
+        self.__addRowWithDataToGrid(grid, fields, on_add(self.__getValsFromInput(inputs, fields)))
+        self.__clearInputs(inputs, fields)
 
 
-    def __deleteRowFromGrid(self, inputs, grid, on_del) -> None:
+    def __deleteRowFromGrid(self, vals, grid, on_del) -> None:
         current_row = grid.currentRow()
         
-        if not on_del([inpt.text() for inpt in inputs]):
-            QMessageBox.critical(self, 'Error', 'btn_del_action error')
-            return False
+        if not on_del(vals):
+            return QMessageBox.warning(self, 'Error','Prohibited')
         
         if current_row < 0:
             return QMessageBox.warning(self, 'Warning','Please select a record to delete')
@@ -184,26 +206,14 @@ class MiniDbHelper(QMainWindow):
         _step = len(fields)
         
         for __start, __end in zip(range(_start, _end, _step), range(_step, _end, _step)):
-            print(vals[__start:__end])
-            print(__start, __end)
             self.__addRowWithDataToGrid(grid, fields, vals[__start:__end])
 
 
-    def __addRowWithDataToGrid(self, grid: QTableWidget, fields, vals) -> None:
+    def __addRowWithDataToGrid(self, grid: QTableWidget, fields: dict, vals: list) -> None:
         row = grid.rowCount()
         grid.insertRow(row)
-        
         for _type, val, col in zip(fields.values(), vals, range(len(fields))):
-            if "bool" in _type:
-                checkbox = QCheckBox()
-                checkbox.setChecked(val)
-                grid.setCellWidget(row, col, checkbox)
-            if "unsigned" in _type:
-                updown = QSpinBox()
-                updown.setValue(int(val))
-                grid.setCellWidget(row, col, updown)
-            else:
-                grid.setItem(row, col, QTableWidgetItem(val))
+            grid.setCellWidget(row, col, self.__getInputFieldByType(_type, val, True))
     
     
     def __getValsFromInput(self, inputs: list[QWidget], fields: dict) -> list:
@@ -232,6 +242,8 @@ class MiniDbHelper(QMainWindow):
                     vals.append(False)
                 else:
                     vals.append(True)
+            elif "unsigned"in fields[keys[i%len(fields)]] or "int" in fields[keys[i%len(fields)]]:
+                vals.append(float(value))
             else:
                 vals.append(value)
                 
@@ -247,12 +259,24 @@ if (__name__ == "__main__"):
 
     app = QApplication(sys.argv)
     
+    def truefalse(vals: list) -> list:
+        _vals = list()
+        
+        for val in vals:
+            if val is True:
+                _vals.append(False)
+            else:
+                _vals.append(val)
+                
+        return _vals
+        
     window = MiniDbHelper("Sells",
                           Layout(title="Primary",
                                  fields={"id" : "int", "summ": "int", "priority": "unsigned"},
                                  initial_data=["1", "2", "3", "4", "5", "6"]),
                           Layout(title="Notes",
                                  initial_data=["1", "2", "3", "0"],
+                                 #on_add=truefalse,
                                  fields={"Name": "", "Checked": "bool"}))
     
     window.show()

@@ -56,7 +56,7 @@ Supported types:
 Optional methods to check/process data when user clicks add/delete button
 
 ```Python
-def on_add(*args) -> dict:
+def on_add(vals: list) -> list:
     ...
     return kwargs
 ```
@@ -68,7 +68,7 @@ Default: no action
 Optional method to control user input
 
 ```Python
-def validator(*args) -> str:
+def validator(vals: list) -> str:
     if some_error:
        return "Error text" #To show to user
 
@@ -77,13 +77,15 @@ def validator(*args) -> str:
 
 Default: just checks if all input fields are not empty.
 
+# Terminology
+
++ vals - list of values of its native type: `[123, "String", True, -32.43]`
+
 # TO-DO
 
 - Окно должно быть готово к использованию сразу после создания экземпляра класса;
-- Сквозная передача данных через подключаемые обработчики для модификации (например генерация ID);
 - Хранить словари элементов чтобы можно было обращаться к ключевым позициям для их модификации или независимого получения данных;
 - Полностью адаптивный интерфейс. Либо через QDockWidget либо через разделители для изменения размелов;
-- Адаптация полей отображения-ввода под тип данных (задавать через словарь field-type при конфигурировании);
 - Импорт/Экспорт данных CSV/Excel/...;
 - Кастомные валидаторы;
 - Возможность скрывать поля ввода для пользователя.
