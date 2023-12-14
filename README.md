@@ -52,7 +52,7 @@ data = {"Field Name": "type", "Another Field": "type"} #Dictionary
 
 + not specified -> "str" -> (QLineEdit)
 
-# on_add() & on_delete() | TO-DO
+# on_add() & on_delete()
 
 Optional methods to check/process data when user clicks add/delete button
 
@@ -65,7 +65,7 @@ def on_add(vals: list) -> list:
 
 Default: no action
 
-# validator() | TO-DO
+# validator()
 
 Optional method to control user input
 
