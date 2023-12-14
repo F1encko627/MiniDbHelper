@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QTableWidget, 
-    QTableWidgetItem, QLabel, QFormLayout, 
-    QLineEdit, QWidget, QPushButton, QHBoxLayout, 
-    QMessageBox, QVBoxLayout, QMessageBox,
-    QGroupBox, QCheckBox, QDoubleSpinBox
+    QApplication, QMainWindow, QTableWidget,
+    QLabel, QFormLayout, QLineEdit, QWidget,
+    QPushButton, QHBoxLayout, QMessageBox,
+    QVBoxLayout, QMessageBox, QGroupBox,
+    QCheckBox, QDoubleSpinBox
 )
 from PySide6.QtGui import QIcon
 import sys
@@ -158,7 +158,7 @@ class MiniDbHelper(QMainWindow):
                 continue
             
             if not input.text().strip():
-                QMessageBox.critical(self.window, 'Error', 'Please enter ' + title)
+                QMessageBox.critical(self.window(), 'Error', 'Please enter ' + title)
                 input.setFocus()
                 return False
             
@@ -199,7 +199,7 @@ class MiniDbHelper(QMainWindow):
             grid.removeRow(current_row)
 
 
-    def __populateGrid(self, grid: QTableWidget, fields: dict, initial_data) -> None:
+    def __populateGrid(self, grid: QTableWidget, fields: dict, initial_data: list) -> None:
         vals = self.__convertToVals(initial_data, fields)
         _start = 0
         _end = len(vals) + 1
@@ -219,11 +219,11 @@ class MiniDbHelper(QMainWindow):
     def __getValsFromInput(self, inputs: list[QWidget], fields: dict) -> list:
         vals = list()
         
-        for input, type in zip(inputs, fields.values()):
-            if "bool" in type:
+        for input, _type in zip(inputs, fields.values()):
+            if "bool" in _type:
                 vals.append(input.isChecked())
-            if "unsigned" in type:
-                vals.append(str(input.value()))
+            if "unsigned" in _type or "int" in _type:
+                vals.append(input.value())
             else:
                 vals.append(str(input.text()))
                 
