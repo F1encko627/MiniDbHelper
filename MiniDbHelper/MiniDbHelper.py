@@ -224,7 +224,7 @@ class MiniDbHelper(QMainWindow):
         for input, _type in zip(inputs, fields.values()):
             if "bool" in _type:
                 vals.append(input.isChecked())
-            if "unsigned" in _type or "int" in _type:
+            elif "unsigned" in _type or "int" in _type:
                 vals.append(input.value())
             else:
                 vals.append(str(input.text()))
