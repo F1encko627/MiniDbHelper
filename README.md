@@ -33,7 +33,7 @@ window.show()
 sys.exit(app.exec())
 ```
 
-## Result
+### Result
 
 ![result](https://github.com/F1encko627/MiniDbHelper/assets/46199406/04935f8e-af0a-42f5-b0d2-1df4d82a971c)
 
@@ -43,13 +43,14 @@ sys.exit(app.exec())
 data = {"Field Name": "type", "Another Field": "type"} #Dictionary
 ```
 
-Supported types:
+### Supported types:
+
 - "str" -> (QLineEdit)
-- "int" -> (QLineEdit)
-- "unsigned" -> (QSpinBox)
+- "int" -> (QDoubleSpinBox) -> STORED AS FLOAT
+- "unsigned" -> (QDoubleSpinBox) -> STORED AS FLOAT
 - "bool" -> (QCheckBox)
 
-+ not specified -> "str"
++ not specified -> "str" -> (QLineEdit)
 
 # on_add() & on_delete() | TO-DO
 
@@ -57,8 +58,9 @@ Optional methods to check/process data when user clicks add/delete button
 
 ```Python
 def on_add(vals: list) -> list:
-    ...
-    return kwargs
+    new vals = edit(vals)
+
+    return new_vals
 ```
 
 Default: no action
@@ -70,16 +72,16 @@ Optional method to control user input
 ```Python
 def validator(vals: list) -> str:
     if some_error:
-       return "Error text" #To show to user
+       return "Error text" #Show error text to user
 
-    return "" #Just continue
+    return "~OK" #Just continue
 ```
 
 Default: just checks if all input fields are not empty.
 
 # Terminology
 
-+ vals - list of values of its native type: `[123, "String", True, -32.43]`
++ vals - list of values of its native type (according to [supported types](#supported-types)): `[123.0, "String", True, -32.43]`
 
 # TO-DO
 
@@ -87,5 +89,4 @@ Default: just checks if all input fields are not empty.
 - Хранить словари элементов чтобы можно было обращаться к ключевым позициям для их модификации или независимого получения данных;
 - Полностью адаптивный интерфейс. Либо через QDockWidget либо через разделители для изменения размелов;
 - Импорт/Экспорт данных CSV/Excel/...;
-- Кастомные валидаторы;
 - Возможность скрывать поля ввода для пользователя.
