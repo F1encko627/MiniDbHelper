@@ -126,12 +126,14 @@ class MiniDbHelper(QMainWindow):
             _input = QDoubleSpinBox()
             _input.setDecimals(0)
             _input.setRange(-9223372036854775808, 9223372036854775807)
+            _input.clear()
             if val:
                 _input.setValue(val)
         elif "unsigned" in _type:
             _input = QDoubleSpinBox()
             _input.setDecimals(0)
             _input.setMaximum(9223372036854775807)
+            _input.clear()
             if val:
                 _input.setValue(val)
         else:
