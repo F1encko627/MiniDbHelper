@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QLabel, QFormLayout, QLineEdit, QWidget,
     QPushButton, QHBoxLayout, QMessageBox,
     QVBoxLayout, QMessageBox, QGroupBox,
-    QCheckBox, QDoubleSpinBox
+    QCheckBox, QDoubleSpinBox, QTableView
 )
 from PySide6.QtGui import QIcon
 import sys
@@ -19,7 +19,7 @@ class Layout():
                  btn_add_name : str = "Add",
                  btn_del_name : str = "Delete",
                  on_add : Callable = lambda vals: vals,
-                 on_del : Callable = lambda vals: True,
+                 on_del : Callable = lambda vals: "~OK",
                  validator: Callable = None,
                  initial_data : list = None):
         self.title = title
@@ -111,7 +111,7 @@ class MiniDbHelper(QMainWindow):
         btnAdd.clicked.connect(lambda state: self.__addDataFromInputsToGrid(inputs, l.fields, grid, l.on_add, l.validator))
         btnLayout.addWidget(btnAdd)
         btnDel = QPushButton(text=l.btn_del_name)
-        btnDel.clicked.connect(lambda state: self.__deleteRowFromGrid(inputs, grid, l.on_del))
+        btnDel.clicked.connect(lambda state: self.__deleteRowFromGrid(l.fields, grid, l.on_del))
         btnLayout.addWidget(btnDel)
 
 
@@ -141,7 +141,7 @@ class MiniDbHelper(QMainWindow):
             if val:
                 _input.setText(val)
             
-        _input.setEnabled(not(isDisabled))
+        _input.setDisabled(isDisabled)
         
         return _input
             
@@ -181,11 +181,18 @@ class MiniDbHelper(QMainWindow):
         self.__clearInputs(inputs, fields)
 
 
-    def __deleteRowFromGrid(self, vals, grid, on_del) -> None:
+    def __deleteRowFromGrid(self, fields: dict, grid: QTableWidget, on_del) -> None:
         current_row = grid.currentRow()
         
-        if not on_del(vals):
-            return QMessageBox.warning(self, 'Error','Prohibited')
+        _inputs = list()
+        
+        for i in range(0, len(fields)):
+            _inputs.append(grid.cellWidget(current_row, i))
+        
+        err_msg = on_del(self.__getValsFromInput(_inputs, fields))
+        
+        if err_msg != "~OK":
+            return QMessageBox.warning(self, 'Error', err_msg)
         
         if current_row < 0:
             return QMessageBox.warning(self, 'Warning','Please select a record to delete')
